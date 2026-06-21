@@ -62,7 +62,7 @@ export default function Coach() {
                 return copy;
               });
             }
-          } catch {}
+          } catch (parseErr) { console.error("SSE parse error:", parseErr); }
         }
       }
     } catch (e) {
@@ -96,7 +96,7 @@ export default function Coach() {
             </div>
           )}
           {messages.map((m, i) => (
-            <div key={i} className={`flex gap-3 ${m.role==="user" ? "justify-end" : ""}`}>
+            <div key={`${m.role}-${m.created_at}-${i}`} className={`flex gap-3 ${m.role==="user" ? "justify-end" : ""}`}>
               {m.role!=="user" && <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0"><Sparkles className="h-4 w-4 text-accent"/></div>}
               <div className={`max-w-2xl px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${m.role==="user" ? "bg-primary text-primary-foreground" : "bg-secondary/40"}`}>
                 {m.content || (streaming && i===messages.length-1 ? "…" : "")}

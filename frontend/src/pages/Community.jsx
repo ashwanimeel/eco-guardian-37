@@ -18,7 +18,7 @@ export default function Community() {
 
       <Card className="overflow-hidden">
         {leaders.map((u, i) => (
-          <div key={i} className={`flex items-center gap-4 p-5 ${i < leaders.length-1 ? "border-b border-border" : ""}`} data-testid={`leaderboard-row-${i}`}>
+          <div key={u.name + i} className={`flex items-center gap-4 p-5 ${i < leaders.length-1 ? "border-b border-border" : ""}`} data-testid={`leaderboard-row-${i}`}>
             <div className="font-serif text-3xl w-10 text-center" style={{color: i < 3 ? medals[i] : undefined}}>{i+1}</div>
             <Avatar><AvatarImage src={u.picture}/><AvatarFallback>{u.name.slice(0,2)}</AvatarFallback></Avatar>
             <div className="flex-1 min-w-0">

@@ -93,7 +93,7 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={catData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                {catData.map((_,i)=> <Cell key={i} fill={PALETTE[i % PALETTE.length]}/>)}
+                {catData.map((c,i)=> <Cell key={c.name} fill={PALETTE[i % PALETTE.length]}/>)}
               </Pie>
               <Tooltip contentStyle={{background:"#1A2F24", border:"none", borderRadius:8, color:"#F7F5F0"}}/>
             </PieChart>

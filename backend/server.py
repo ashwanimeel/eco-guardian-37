@@ -383,8 +383,8 @@ async def daily_tip():
         "Carry a reusable bottle — saves 156 plastic bottles/year.",
         "Air-dry clothes when possible — dryers use enormous energy.",
     ]
-    import random
-    return {"tip": random.choice(tips), "date": datetime.now(timezone.utc).date().isoformat()}
+    import secrets
+    return {"tip": secrets.choice(tips), "date": datetime.now(timezone.utc).date().isoformat()}
 
 # ========= CHALLENGES =========
 @api.get("/challenges")

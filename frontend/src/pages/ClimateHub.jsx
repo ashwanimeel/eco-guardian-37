@@ -119,11 +119,11 @@ export default function ClimateHub() {
               {!result ? (
                 <div className="space-y-6 max-h-[60vh] overflow-y-auto">
                   {openQuiz.questions.map((q, qi) => (
-                    <div key={qi}>
+                    <div key={`q-${qi}`}>
                       <div className="font-medium mb-3 text-sm">{qi+1}. {q.q}</div>
                       <div className="space-y-2">
                         {q.options.map((opt, oi) => (
-                          <button key={oi}
+                          <button key={`q-${qi}-opt-${oi}`}
                             onClick={()=>{const c=[...answers]; c[qi]=oi; setAnswers(c);}}
                             className={`block w-full text-left text-sm px-4 py-2 rounded border transition ${answers[qi]===oi ? "border-accent bg-accent/10" : "border-border hover:bg-secondary/40"}`}
                             data-testid={`quiz-opt-${qi}-${oi}`}>
