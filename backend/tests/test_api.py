@@ -22,14 +22,19 @@ from PIL import Image, ImageDraw
 
 # ---------- Test configuration ---------------------------------------------------
 def _backend_base_url() -> str:
-    """Read the external backend URL from the frontend .env so we exercise the
-    same ingress + CORS path that real browsers hit."""
+    """
+    Resolve the backend base URL with this precedence:
+      1. `BACKEND_URL` env var (used by CI to point at localhost:8001)
+      2. `REACT_APP_BACKEND_URL` from frontend/.env (used in the preview pod)
+    """
+    if os.environ.get("BACKEND_URL"):
+        return os.environ["BACKEND_URL"].rstrip("/")
     env_path = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env")
     with open(env_path, "r", encoding="utf-8") as fh:
         for line in fh:
             if line.startswith("REACT_APP_BACKEND_URL="):
-                return line.split("=", 1)[1].strip().strip('"')
-    raise RuntimeError("REACT_APP_BACKEND_URL not found in frontend/.env")
+                return line.split("=", 1)[1].strip().strip('"').rstrip("/")
+    raise RuntimeError("Set BACKEND_URL or REACT_APP_BACKEND_URL")
 
 
 BASE_URL = _backend_base_url()

@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-tests:
+    name: Backend tests + coverage
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok' | grep -q 1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MONGO_URL: mongodb://localhost:27017
+      DB_NAME: ecotrack_ci
+      CORS_ORIGINS: "*"
+      JWT_SECRET: ci_test_secret_change_me
+      EMERGENT_LLM_KEY: ${{ secrets.EMERGENT_LLM_KEY }}
+      BACKEND_URL: http://localhost:8001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install -r backend/requirements-dev.txt
+
+      - name: Run unit tests (in-process, with coverage)
+        run: |
+          python -m pytest backend/tests/test_units.py \
+            --cov --cov-report=xml:coverage-unit.xml --cov-report=term
+
+      - name: Start backend under coverage for integration tests
+        working-directory: backend
+        run: |
+          coverage run --rcfile=../.coveragerc -m uvicorn server:app \
+            --host 0.0.0.0 --port 8001 &
+          echo $! > /tmp/server.pid
+          # Wait for the server to be ready
+          for i in {1..30}; do
+            if curl -sf http://localhost:8001/api/ > /dev/null; then
+              echo "Backend is up"; break
+            fi
+            sleep 1
+          done
+
+      - name: Run integration tests against running server
+        run: python -m pytest backend/tests/test_api.py -v
+
+      - name: Stop backend and collect coverage
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill -INT $(cat /tmp/server.pid) || true
+            sleep 2
+          fi
+
+      - name: Combine coverage from unit + integration runs
+        if: always()
+        run: |
+          coverage combine || true
+          coverage report --show-missing
+          coverage xml -o coverage.xml
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          flags: backend
+          fail_ci_if_error: false
+
+  frontend-lint:
+    name: Frontend lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+      - working-directory: frontend
+        run: yarn install --frozen-lockfile
+      - working-directory: frontend
+        run: yarn eslint "src/**/*.{js,jsx}" --max-warnings 0
