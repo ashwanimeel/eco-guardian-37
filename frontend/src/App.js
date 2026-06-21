@@ -37,6 +37,7 @@ function AppRouter() {
       <Route element={<Protected><AppShell /></Protected>}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/calculator" element={<Calculator />} />
+        <Route path="/scanner" element={<Scanner />} />
         <Route path="/coach" element={<Coach />} />
         <Route path="/challenges" element={<Challenges />} />
         <Route path="/community" element={<Community />} />

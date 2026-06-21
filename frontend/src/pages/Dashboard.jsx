@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { TrendingDown, TreePine, Award, Flame, Sparkles } from "lucide-react";
 
 const PALETTE = ["#1A2F24", "#94A684", "#C0573E", "#5C7345", "#D6A85A", "#6B4F3A"];

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { api, API } from "@/lib/api";
+import { API } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

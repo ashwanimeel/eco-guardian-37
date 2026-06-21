@@ -33,7 +33,7 @@ export default function Calculator() {
       const r = await api.post("/carbon/entry", data);
       setResult(r.data);
       toast.success(`Logged · +${r.data.points_earned} points`);
-    } catch (e) {
+    } catch {
       toast.error("Failed to log");
     } finally { setLoading(false); }
   };

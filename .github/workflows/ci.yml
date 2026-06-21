@@ -53,7 +53,7 @@ jobs:
       - name: Start backend under coverage for integration tests
         working-directory: backend
         run: |
-          coverage run --rcfile=../.coveragerc -m uvicorn server:app \
+          python -m coverage run --rcfile=../.coveragerc -m uvicorn server:app \
             --host 0.0.0.0 --port 8001 &
           echo $! > /tmp/server.pid
           # Wait for the server to be ready
@@ -78,9 +78,9 @@ jobs:
       - name: Combine coverage from unit + integration runs
         if: always()
         run: |
-          coverage combine || true
-          coverage report --show-missing
-          coverage xml -o coverage.xml
+          python -m coverage combine || true
+          python -m coverage report --show-missing
+          python -m coverage xml -o coverage.xml
 
       - name: Upload coverage to Codecov
         if: always()

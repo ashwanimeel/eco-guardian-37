@@ -65,7 +65,7 @@ export default function Coach() {
           } catch (parseErr) { console.error("SSE parse error:", parseErr); }
         }
       }
-    } catch (e) {
+    } catch {
       setMessages(m => {
         const copy = [...m];
         copy[copy.length-1] = {...copy[copy.length-1], content: "[Error reaching coach]"};

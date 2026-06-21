@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   LayoutDashboard, Calculator, Sparkles, Trophy, Users,
-  BookOpen, FileBarChart, Leaf, LogOut, User as UserIcon, ScanLine
+  BookOpen, FileBarChart, Leaf, LogOut, ScanLine
 } from "lucide-react";
 
 const links = [
