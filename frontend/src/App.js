@@ -7,6 +7,7 @@ import Register from "@/pages/Register";
 import AuthCallback from "@/pages/AuthCallback";
 import Dashboard from "@/pages/Dashboard";
 import Calculator from "@/pages/Calculator";
+import Scanner from "@/pages/Scanner";
 import Coach from "@/pages/Coach";
 import Challenges from "@/pages/Challenges";
 import Community from "@/pages/Community";

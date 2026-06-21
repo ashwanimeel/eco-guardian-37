@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   LayoutDashboard, Calculator, Sparkles, Trophy, Users,
-  BookOpen, FileBarChart, Leaf, LogOut, User as UserIcon
+  BookOpen, FileBarChart, Leaf, LogOut, User as UserIcon, ScanLine
 } from "lucide-react";
 
 const links = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", testid: "nav-dashboard" },
   { to: "/calculator", icon: Calculator, label: "Calculator", testid: "nav-calculator" },
+  { to: "/scanner", icon: ScanLine, label: "Bill Scanner", testid: "nav-scanner" },
   { to: "/coach", icon: Sparkles, label: "AI Coach", testid: "nav-coach" },
   { to: "/challenges", icon: Trophy, label: "Challenges", testid: "nav-challenges" },
   { to: "/community", icon: Users, label: "Community", testid: "nav-community" },

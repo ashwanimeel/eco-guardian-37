@@ -1,10 +1,10 @@
 """EcoTrack AI - FastAPI backend"""
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Cookie
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Cookie, UploadFile, File
 from fastapi.responses import StreamingResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-import os, logging, uuid, jwt, bcrypt, httpx, json
+import os, logging, uuid, jwt, bcrypt, httpx, json, base64, re
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Dict, Any
@@ -385,6 +385,112 @@ async def daily_tip():
     ]
     import secrets
     return {"tip": secrets.choice(tips), "date": datetime.now(timezone.utc).date().isoformat()}
+
+# ========= AI BILL SCANNER =========
+ALLOWED_BILL_MIME = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+
+@api.post("/scanner/bill")
+async def scan_bill(file: UploadFile = File(...), user: User = Depends(get_current_user)):
+    if file.content_type not in ALLOWED_BILL_MIME:
+        raise HTTPException(400, f"Unsupported image type: {file.content_type}. Use JPEG/PNG/WEBP.")
+    raw = await file.read()
+    if len(raw) > 8 * 1024 * 1024:
+        raise HTTPException(400, "Image too large (max 8MB)")
+    if len(raw) < 1024:
+        raise HTTPException(400, "Image too small / empty")
+
+    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent, TextDelta, StreamDone
+    b64 = base64.b64encode(raw).decode()
+
+    system_msg = (
+        "You are an OCR + structured-extraction engine for electricity utility bills. "
+        "Inspect the image and return ONLY a JSON object — no prose, no markdown fences. "
+        "Schema: {\"kwh\": number|null, \"amount\": number|null, \"currency\": string|null, "
+        "\"period\": string|null, \"provider\": string|null, \"confidence\": \"low\"|\"medium\"|\"high\"}. "
+        "kwh = total energy consumed in kilowatt-hours for the billing period. "
+        "If the image is not an electricity bill or values are unreadable, return all fields null with confidence=\"low\"."
+    )
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"scan_{uuid.uuid4().hex[:8]}",
+        system_message=system_msg,
+    ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+
+    msg = UserMessage(
+        text="Extract the structured data from this electricity bill image. Return only JSON.",
+        file_contents=[ImageContent(image_base64=b64)]
+    )
+
+    full = ""
+    try:
+        async for ev in chat.stream_message(msg):
+            if isinstance(ev, TextDelta):
+                full += ev.content
+            elif isinstance(ev, StreamDone):
+                break
+    except Exception as e:
+        logger.error(f"Bill scan LLM error: {e}")
+        raise HTTPException(502, f"Vision model error: {str(e)[:150]}")
+
+    # Strip code fences if model added them despite instructions
+    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", full.strip(), flags=re.MULTILINE)
+    try:
+        extracted = json.loads(cleaned)
+    except Exception:
+        # Try to find a JSON object inside the response
+        m = re.search(r"\{.*\}", cleaned, re.DOTALL)
+        if not m:
+            raise HTTPException(422, "Could not parse vision response")
+        try:
+            extracted = json.loads(m.group(0))
+        except Exception:
+            raise HTTPException(422, "Could not parse vision response")
+
+    kwh = extracted.get("kwh") if isinstance(extracted, dict) else None
+    if kwh is None or not isinstance(kwh, (int, float)) or kwh <= 0:
+        return {
+            "extracted": extracted,
+            "emissions": None,
+            "entry_saved": False,
+            "message": "No usable kWh value detected — try a clearer image.",
+        }
+
+    # Build a carbon entry from extracted kWh
+    entry = CarbonEntry(electricity_kwh=float(kwh), note=f"Bill scan · {extracted.get('provider') or 'utility'}")
+    emissions = calc_emissions(entry)
+
+    doc = {
+        "entry_id": str(uuid.uuid4()),
+        "user_id": user.user_id,
+        "data": entry.model_dump(),
+        "emissions": emissions,
+        "source": "bill_scan",
+        "extracted": extracted,
+        "date": datetime.now(timezone.utc).date().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.carbon_entries.insert_one(doc)
+
+    earned = max(10, int(40 - emissions["total"] / 5))
+    new_points = user.points + earned
+    new_level = compute_level(new_points)
+    await db.users.update_one(
+        {"user_id": user.user_id},
+        {"$set": {"points": new_points, "level": new_level,
+                  "last_active": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    doc.pop("_id", None)
+    return {
+        "extracted": extracted,
+        "emissions": emissions,
+        "entry_saved": True,
+        "entry_id": doc["entry_id"],
+        "points_earned": earned,
+        "new_level": new_level,
+    }
+
 
 # ========= CHALLENGES =========
 @api.get("/challenges")
