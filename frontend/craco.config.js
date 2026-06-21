@@ -61,22 +61,27 @@ let webpackConfig = {
 };
 
 webpackConfig.devServer = (devServerConfig) => {
-  // Add health check endpoints if enabled
-  if (config.enableHealthCheck && setupHealthEndpoints && healthPluginInstance) {
-    const originalSetupMiddlewares = devServerConfig.setupMiddlewares;
-
-    devServerConfig.setupMiddlewares = (middlewares, devServer) => {
-      // Call original setup if exists
-      if (originalSetupMiddlewares) {
-        middlewares = originalSetupMiddlewares(middlewares, devServer);
-      }
-
-      // Setup health endpoints
-      setupHealthEndpoints(devServer, healthPluginInstance);
-
-      return middlewares;
-    };
+  // Strip removed-in-wds5 options so newer webpack-dev-server doesn't reject the config
+  const beforeMw = devServerConfig.onBeforeSetupMiddleware;
+  const afterMw = devServerConfig.onAfterSetupMiddleware;
+  delete devServerConfig.onBeforeSetupMiddleware;
+  delete devServerConfig.onAfterSetupMiddleware;
+  // 'https' was renamed to 'server' in wds5
+  if (devServerConfig.https !== undefined) {
+    devServerConfig.server = devServerConfig.https ? { type: "https" } : { type: "http" };
+    delete devServerConfig.https;
   }
+
+  const originalSetupMiddlewares = devServerConfig.setupMiddlewares;
+  devServerConfig.setupMiddlewares = (middlewares, devServer) => {
+    if (beforeMw) beforeMw(devServer);
+    if (originalSetupMiddlewares) middlewares = originalSetupMiddlewares(middlewares, devServer);
+    if (afterMw) afterMw(devServer);
+    if (config.enableHealthCheck && setupHealthEndpoints && healthPluginInstance) {
+      setupHealthEndpoints(devServer, healthPluginInstance);
+    }
+    return middlewares;
+  };
 
   return devServerConfig;
 };
