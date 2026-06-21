@@ -1,0 +1,122 @@
+{
+  "project_name": "EcoTrack AI",
+  "theme": "Light/Dark Mode (Primary: Light)",
+  "archetype": "1 - Organic & Earthy (with Editorial Tension)",
+  "design_philosophy": "Avoid generic SaaS-green. Aim for an inventive, editorial nature-magazine aesthetic mixed with a futurist climate-data terminal vibe. Grounded, tactile, yet data-rich.",
+  "colors": {
+    "light": {
+      "background": "#F7F5F0",
+      "foreground": "#1A2F24",
+      "primary": "#1A2F24",
+      "primary_foreground": "#F7F5F0",
+      "secondary": "#94A684",
+      "secondary_foreground": "#1A2F24",
+      "accent": "#C0573E",
+      "accent_foreground": "#F7F5F0",
+      "muted": "#EBE8E0",
+      "muted_foreground": "#5C7345",
+      "border": "#EBE8E0"
+    },
+    "dark": {
+      "background": "#0F1A14",
+      "foreground": "#F7F5F0",
+      "primary": "#94A684",
+      "primary_foreground": "#0F1A14",
+      "secondary": "#1A2F24",
+      "secondary_foreground": "#F7F5F0",
+      "accent": "#C0573E",
+      "accent_foreground": "#F7F5F0",
+      "muted": "#1A2F24",
+      "muted_foreground": "#94A684",
+      "border": "#1A2F24"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "headings": "Cormorant Garamond, serif",
+      "body": "Outfit, sans-serif"
+    },
+    "sizing": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-none",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight",
+      "h3": "text-xl sm:text-2xl",
+      "h4": "text-lg sm:text-xl",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm uppercase tracking-[0.2em]"
+    },
+    "guidelines": "Use Cormorant Garamond for elegant, high-end editorial feel on headings. Pair with Outfit for crisp, modern data visualization and app UI. Avoid Inter."
+  },
+  "surfaces_and_glassmorphism": {
+    "glassmorphism": "backdrop-blur-xl bg-white/70 (light) or bg-black/60 (dark), backdrop-saturate-150, border border-white/20 (light) or border-white/10 (dark), shadow-sm",
+    "cards": "Subtle roundness (max 8px border-radius). Avoid heavy box-shadows. Use 1px solid strokes or glassmorphism for floating widgets.",
+    "dashboard_cards": "Flat background, 1px subtle border, no shadow by default. Hover adds slight lift (-translate-y-1) and shadow-lg."
+  },
+  "layout_and_spacing": {
+    "spacing_scale": "Use generous spacing. p-6, p-8, p-12 for containers.",
+    "grids": {
+      "marketing": "MODE A: TETRIS GRID (grid-cols-1 md:grid-cols-12, wide gaps, asymmetric spans).",
+      "dashboard": "MODE B: CONTROL ROOM GRID (grid-cols-1 md:grid-cols-4, tight gaps, dense data correlation)."
+    },
+    "alignment": "Left-align paragraphs, data, and dense content. Center-align hero headings only if it balances the editorial composition."
+  },
+  "components_strategy": {
+    "general": "Use pure HTML/Tailwind for marketing layout structures. Use heavily customized Shadcn components for interactive elements.",
+    "forms": "Shadcn components (Input, Select, Form, Checkbox) with styling mapped to the brand.",
+    "charts": "Shadcn charts or Recharts. Functional color: reserve red/amber/green for status. Primary color for main data lines.",
+    "icons": "Use lucide-react for default crisp UI icons, or @phosphor-icons/react (Duotone) for high-end editorial touches."
+  },
+  "motion_and_interactions": {
+    "philosophy": "Smooth animations, micro-interactions for feedback.",
+    "rules": [
+      "Hover states on all interactive elements (must change color/background).",
+      "Entrance animations staggered for lists (Framer Motion).",
+      "Respect prefers-reduced-motion."
+    ]
+  },
+  "testing_and_accessibility": {
+    "data_testid": "All interactive and key informational elements MUST include a data-testid attribute (kebab-case, role-based).",
+    "contrast": "Maintain 4.5:1 ratio for normal text. Check contrast on hover states."
+  },
+  "media": {
+    "hero_backgrounds": [
+      {
+        "url": "https://images.unsplash.com/photo-1488330890490-c291ecf62571?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MTJ8MHwxfHNlYXJjaHwxfHxhZXJpYWwlMjBmb3Jlc3QlMjBmb2d8ZW58MHx8fHwxNzgyMDExNzMwfDA&ixlib=rb-4.1.0&q=85",
+        "description": "green pine trees during daytime"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1535025075092-5a1cf795130b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MTJ8MHwxfHNlYXJjaHw0fHxhZXJpYWwlMjBmb3Jlc3QlMjBmb2d8ZW58MHx8fHwxNzgyMDExNzMwfDA&ixlib=rb-4.1.0&q=85",
+        "description": "trees covered with fog"
+      }
+    ],
+    "abstract_textures": [
+      {
+        "url": "https://images.unsplash.com/photo-1483794344563-d27a8d18014e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwcGxhbnQlMjBsZWFmfGVufDB8fHx8MTc4MjAxMTczMHww&ixlib=rb-4.1.0&q=85",
+        "description": "minimalist green plant"
+      },
+      {
+        "url": "https://images.pexels.com/photos/4103438/pexels-photo-4103438.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Elegant yucca plant with sharp green leaves"
+      }
+    ],
+    "community_action": [
+      {
+        "url": "https://images.pexels.com/photos/5029853/pexels-photo-5029853.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Group of diverse people planting tree saplings together"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1551855350-c86caeaf8707?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwyfHxwZW9wbGUlMjBwbGFudGluZyUyMHRyZWVzfGVufDB8fHx8MTc4MjAxMTczMHww&ixlib=rb-4.1.0&q=85",
+        "description": "woman planting plant during daytime"
+      }
+    ],
+    "avatars": [
+      {
+        "url": "https://images.pexels.com/photos/3228887/pexels-photo-3228887.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "A confident man wearing glasses outdoors"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwyfHxzbWlsaW5nJTIwcGVyc29uJTIwb3V0ZG9vcnMlMjBwb3J0cmFpdHxlbnwwfHx8fDE3ODIwMTE3MzB8MA&ixlib=rb-4.1.0&q=85",
+        "description": "smiling woman sitting on grass"
+      }
+    ]
+  }
+}
