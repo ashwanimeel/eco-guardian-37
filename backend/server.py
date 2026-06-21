@@ -4,7 +4,16 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-import os, logging, uuid, jwt, bcrypt, httpx, json, base64, re
+import os
+import logging
+import uuid
+import json
+import base64
+import re
+import secrets
+import jwt
+import bcrypt
+import httpx
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Dict, Any
@@ -80,42 +89,58 @@ class QuizSubmit(BaseModel):
     quiz_id: str
     answers: List[int]
 
-# ========= EMISSION FACTORS (kg CO2) =========
+# Emission factors in kg CO₂ per unit (source: IPCC / DEFRA averages, 2024).
+# Used by calc_emissions() to convert lifestyle activities to greenhouse gas.
 EF = {
     "car_km": 0.192, "bus_km": 0.089, "train_km": 0.041, "flight_km": 0.255,
     "electricity_kwh": 0.475, "meat_meal": 3.3, "veg_meal": 0.7,
     "water_l": 0.000344, "shopping_usd": 0.5, "waste_kg": 0.5,
 }
 
+# Gamification level thresholds — ordered ascending by required points.
 LEVELS = [
     (0, "Eco Beginner"), (200, "Green Explorer"), (600, "Climate Hero"),
     (1500, "Planet Protector"), (3500, "Earth Guardian"),
 ]
 
 def compute_level(points: int) -> str:
-    lvl = "Eco Beginner"
+    """Return the highest level name whose threshold the given points satisfy."""
+    level_name = "Eco Beginner"
     for threshold, name in LEVELS:
         if points >= threshold:
-            lvl = name
-    return lvl
+            level_name = name
+    return level_name
 
-def calc_emissions(e: CarbonEntry) -> Dict[str, float]:
-    transport = (e.transport_km_car * EF["car_km"] + e.transport_km_bus * EF["bus_km"]
-                 + e.transport_km_train * EF["train_km"] + e.transport_km_flight * EF["flight_km"])
-    electricity = e.electricity_kwh * EF["electricity_kwh"]
-    food = e.food_meat_meals * EF["meat_meal"] + e.food_veg_meals * EF["veg_meal"]
-    water = e.water_liters * EF["water_l"]
-    shopping = e.shopping_usd * EF["shopping_usd"]
-    waste = e.waste_kg * EF["waste_kg"]
+def calc_emissions(entry: CarbonEntry) -> Dict[str, float]:
+    """Convert a CarbonEntry's lifestyle inputs into per-category CO₂ kg + total."""
+    transport = (
+        entry.transport_km_car * EF["car_km"]
+        + entry.transport_km_bus * EF["bus_km"]
+        + entry.transport_km_train * EF["train_km"]
+        + entry.transport_km_flight * EF["flight_km"]
+    )
+    electricity = entry.electricity_kwh * EF["electricity_kwh"]
+    food = entry.food_meat_meals * EF["meat_meal"] + entry.food_veg_meals * EF["veg_meal"]
+    water = entry.water_liters * EF["water_l"]
+    shopping = entry.shopping_usd * EF["shopping_usd"]
+    waste = entry.waste_kg * EF["waste_kg"]
     total = transport + electricity + food + water + shopping + waste
-    return {"transport": round(transport,2), "electricity": round(electricity,2),
-            "food": round(food,2), "water": round(water,2), "shopping": round(shopping,2),
-            "waste": round(waste,2), "total": round(total,2)}
+    return {
+        "transport": round(transport, 2),
+        "electricity": round(electricity, 2),
+        "food": round(food, 2),
+        "water": round(water, 2),
+        "shopping": round(shopping, 2),
+        "waste": round(waste, 2),
+        "total": round(total, 2),
+    }
 
-def carbon_score(daily_total: float) -> int:
-    # Avg person ~16kg CO2/day. 0kg=100, 32kg=0
-    score = max(0, min(100, int(100 - (daily_total / 32) * 100)))
-    return score
+def carbon_score(daily_total_kg: float) -> int:
+    """
+    Map a daily kg CO₂ total to a 0–100 score. Anchored so that 0 kg/day = 100
+    and 32 kg/day (≈2× the global per-capita average) = 0. Clamped to [0, 100].
+    """
+    return max(0, min(100, int(100 - (daily_total_kg / 32) * 100)))
 
 # ========= AUTH HELPERS =========
 def hash_pw(pw: str) -> str:
@@ -129,21 +154,30 @@ def make_jwt(user_id: str) -> str:
                       JWT_SECRET, algorithm="HS256")
 
 async def get_current_user(request: Request) -> User:
+    """
+    Resolve the authenticated user from either:
+      1. A `session_token` httpOnly cookie, OR
+      2. A `Bearer <token>` Authorization header (fallback for cross-origin SSE).
+    The token is first tried as a JWT (email-password auth path), then as a
+    Google OAuth session token persisted in `user_sessions`. Raises 401 on
+    any failure.
+    """
     token = request.cookies.get("session_token")
     if not token:
-        auth = request.headers.get("Authorization", "")
-        if auth.startswith("Bearer "):
-            token = auth[7:]
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    # Try JWT first
-    user_id = None
+    user_id: Optional[str] = None
+
+    # Path A: app-issued JWT (email/password auth)
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user_id = payload.get("user_id")
     except Exception:
-        # Try session token
+        # Path B: Emergent OAuth session token stored in MongoDB
         sess = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
         if sess:
             exp = sess.get("expires_at")
@@ -279,26 +313,54 @@ async def list_entries(user: User = Depends(get_current_user), limit: int = 30):
 
 @api.get("/carbon/summary")
 async def carbon_summary(user: User = Depends(get_current_user)):
+    """
+    Aggregate the authenticated user's carbon entries into daily / weekly /
+    monthly totals, a 14-day trend series, per-category breakdown, and a
+    derived 0–100 carbon score. Uses ISO date strings for window comparisons
+    to avoid timezone-conversion pitfalls.
+    """
     entries = await db.carbon_entries.find({"user_id": user.user_id}, {"_id": 0}).to_list(365)
     today = datetime.now(timezone.utc).date().isoformat()
     week_start = (datetime.now(timezone.utc) - timedelta(days=7)).date().isoformat()
     month_start = (datetime.now(timezone.utc) - timedelta(days=30)).date().isoformat()
+
     daily, weekly, monthly = 0.0, 0.0, 0.0
-    cats = {"transport":0,"electricity":0,"food":0,"water":0,"shopping":0,"waste":0}
-    trends = {}
-    for e in entries:
-        t = e["emissions"]["total"]; d = e["date"]
-        if d == today: daily += t
-        if d >= week_start: weekly += t
-        if d >= month_start: monthly += t
-        for k in cats: cats[k] += e["emissions"].get(k, 0)
-        trends[d] = trends.get(d, 0) + t
-    trend_list = sorted([{"date": k, "co2": round(v,2)} for k,v in trends.items()], key=lambda x: x["date"])[-14:]
-    score = carbon_score(daily if daily>0 else (weekly/7 if weekly>0 else 16))
+    cats = {"transport": 0, "electricity": 0, "food": 0, "water": 0, "shopping": 0, "waste": 0}
+    trends: Dict[str, float] = {}
+
+    for entry in entries:
+        total_co2 = entry["emissions"]["total"]
+        entry_date = entry["date"]
+        if entry_date == today:
+            daily += total_co2
+        if entry_date >= week_start:
+            weekly += total_co2
+        if entry_date >= month_start:
+            monthly += total_co2
+        for cat in cats:
+            cats[cat] += entry["emissions"].get(cat, 0)
+        trends[entry_date] = trends.get(entry_date, 0) + total_co2
+
+    # Keep only the most recent 14 days for the trend chart, sorted ascending.
+    trend_list = sorted(
+        [{"date": d, "co2": round(v, 2)} for d, v in trends.items()],
+        key=lambda x: x["date"],
+    )[-14:]
+
+    # If user hasn't logged today, fall back to weekly average; otherwise assume
+    # global per-capita average (~16 kg/day) so the score isn't artificially perfect.
+    score_basis = daily if daily > 0 else (weekly / 7 if weekly > 0 else 16)
+    score = carbon_score(score_basis)
+
     return {
-        "daily": round(daily,2), "weekly": round(weekly,2), "monthly": round(monthly,2),
-        "categories": {k: round(v,2) for k,v in cats.items()},
-        "trend": trend_list, "score": score, "trees_to_offset": int((monthly or 1) / 21),
+        "daily": round(daily, 2),
+        "weekly": round(weekly, 2),
+        "monthly": round(monthly, 2),
+        "categories": {k: round(v, 2) for k, v in cats.items()},
+        "trend": trend_list,
+        "score": score,
+        # A mature tree absorbs ~21 kg CO₂/year, so monthly / 21 ≈ trees needed.
+        "trees_to_offset": int((monthly or 1) / 21),
         "total_entries": len(entries),
     }
 
@@ -367,9 +429,10 @@ async def coach_chat(req: ChatReq, user: User = Depends(get_current_user)):
 
 @api.get("/coach/history")
 async def coach_history(user: User = Depends(get_current_user), session_id: Optional[str] = None):
-    q = {"user_id": user.user_id}
-    if session_id: q["session_id"] = session_id
-    msgs = await db.chat_messages.find(q, {"_id": 0}).sort("created_at", 1).to_list(200)
+    query = {"user_id": user.user_id}
+    if session_id:
+        query["session_id"] = session_id
+    msgs = await db.chat_messages.find(query, {"_id": 0}).sort("created_at", 1).to_list(200)
     return msgs
 
 @api.get("/coach/tip")
@@ -383,7 +446,6 @@ async def daily_tip():
         "Carry a reusable bottle — saves 156 plastic bottles/year.",
         "Air-dry clothes when possible — dryers use enormous energy.",
     ]
-    import secrets
     return {"tip": secrets.choice(tips), "date": datetime.now(timezone.utc).date().isoformat()}
 
 # ========= AI BILL SCANNER =========
@@ -498,10 +560,11 @@ async def list_challenges(user: User = Depends(get_current_user)):
     challenges = await db.challenges.find({}, {"_id": 0}).to_list(100)
     user_progress = await db.user_challenges.find({"user_id": user.user_id}, {"_id": 0}).to_list(100)
     prog_map = {p["challenge_id"]: p for p in user_progress}
-    for c in challenges:
-        p = prog_map.get(c["challenge_id"])
-        c["joined"] = bool(p); c["progress"] = p["progress"] if p else 0
-        c["completed"] = p["completed"] if p else False
+    for challenge in challenges:
+        prog = prog_map.get(challenge["challenge_id"])
+        challenge["joined"] = bool(prog)
+        challenge["progress"] = prog["progress"] if prog else 0
+        challenge["completed"] = prog["completed"] if prog else False
     return challenges
 
 @api.post("/challenges/join")

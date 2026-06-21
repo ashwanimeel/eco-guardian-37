@@ -108,8 +108,8 @@ export default function Coach() {
         <div className="border-t border-border p-4 flex gap-2">
           <Input value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={(e)=>e.key==="Enter" && send()}
                  placeholder="Ask your coach…" disabled={streaming} className="flex-1 h-11" data-testid="coach-input"/>
-          <Button onClick={()=>send()} disabled={streaming || !input.trim()} className="rounded-full px-5" data-testid="coach-send-btn">
-            <Send className="h-4 w-4"/>
+          <Button onClick={()=>send()} disabled={streaming || !input.trim()} className="rounded-full px-5" data-testid="coach-send-btn" aria-label="Send message to AI coach">
+            <Send className="h-4 w-4" aria-hidden="true"/>
           </Button>
         </div>
       </Card>

@@ -76,7 +76,7 @@ export default function Register() {
         </div>
       </div>
       <div className="hidden md:block relative order-1 md:order-2">
-        <img src="https://images.pexels.com/photos/5029853/pexels-photo-5029853.jpeg?w=1200" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src="https://images.pexels.com/photos/5029853/pexels-photo-5029853.jpeg?w=1200" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-background/20" />
         <div className="relative h-full flex flex-col justify-end p-12">
           <blockquote className="font-serif text-3xl text-foreground/90 max-w-md leading-snug">

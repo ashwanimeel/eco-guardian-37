@@ -35,7 +35,7 @@ export default function Login() {
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:block relative">
-        <img src="https://images.unsplash.com/photo-1535025075092-5a1cf795130b?w=1200" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src="https://images.unsplash.com/photo-1535025075092-5a1cf795130b?w=1200" alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-background/20" />
         <div className="relative h-full flex flex-col justify-between p-12">
           <Link to="/" className="flex items-center gap-2 text-foreground">

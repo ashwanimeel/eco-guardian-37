@@ -123,7 +123,7 @@ export default function Scanner() {
               >
                 <X className="h-4 w-4"/>
               </button>
-              <img src={preview} alt="bill" className="w-full rounded-lg border border-border max-h-96 object-contain bg-secondary/20"/>
+              <img src={preview} alt="Electricity bill upload preview" className="w-full rounded-lg border border-border max-h-96 object-contain bg-secondary/20"/>
               <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
                 <FileImage className="h-4 w-4"/>
                 <span className="truncate">{file?.name}</span>

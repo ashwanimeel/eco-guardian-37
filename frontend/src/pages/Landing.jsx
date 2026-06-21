@@ -8,10 +8,10 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
-      <nav className="fixed top-0 inset-x-0 z-50 glass">
+      <nav className="fixed top-0 inset-x-0 z-50 glass" aria-label="Primary">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2" data-testid="nav-home-link">
-            <Leaf className="h-5 w-5 text-accent" />
+          <Link to="/" className="flex items-center gap-2" data-testid="nav-home-link" aria-label="EcoTrack AI home">
+            <Leaf className="h-5 w-5 text-accent" aria-hidden="true" />
             <span className="font-serif text-2xl">EcoTrack <span className="text-accent italic">AI</span></span>
           </Link>
           <div className="flex items-center gap-3">
@@ -22,15 +22,15 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-32 pb-24 overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <img src={HERO_BG} alt="forest" className="w-full h-full object-cover opacity-40" />
+      <section className="relative pt-32 pb-24 overflow-hidden" aria-labelledby="hero-heading">
+        <div className="absolute inset-0 -z-10" aria-hidden="true">
+          <img src={HERO_BG} alt="" className="w-full h-full object-cover opacity-40" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
         </div>
         <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-10 items-end">
           <div className="md:col-span-7">
             <div className="label-small mb-6" data-testid="hero-tagline">Climate action · Issue 01</div>
-            <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight">
+            <h1 id="hero-heading" className="font-serif text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight">
               Measure your<br/>
               <em className="text-accent">carbon shadow.</em><br/>
               Outgrow it.

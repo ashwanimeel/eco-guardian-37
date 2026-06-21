@@ -28,19 +28,19 @@ export default function AppShell() {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card/40 sticky top-0 h-screen">
-        <Link to="/dashboard" className="flex items-center gap-2 px-6 py-6 border-b border-border" data-testid="shell-logo">
-          <Leaf className="h-5 w-5 text-accent" />
+      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card/40 sticky top-0 h-screen" aria-label="Primary navigation">
+        <Link to="/dashboard" className="flex items-center gap-2 px-6 py-6 border-b border-border" data-testid="shell-logo" aria-label="EcoTrack AI dashboard">
+          <Leaf className="h-5 w-5 text-accent" aria-hidden="true" />
           <span className="font-serif text-2xl">EcoTrack <em className="text-accent">AI</em></span>
         </Link>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1" aria-label="Application sections">
           {links.map(l => (
             <NavLink key={l.to} to={l.to} data-testid={l.testid}
               className={({isActive}) =>
                 `flex items-center gap-3 px-4 py-2.5 rounded-md text-sm transition-colors
                 ${isActive ? "bg-secondary text-secondary-foreground" : "text-foreground/70 hover:bg-secondary/40 hover:text-foreground"}`
               }>
-              <l.icon className="h-4 w-4" />
+              <l.icon className="h-4 w-4" aria-hidden="true" />
               {l.label}
             </NavLink>
           ))}
@@ -82,7 +82,7 @@ export default function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 md:pt-0 pt-28">
+      <main className="flex-1 md:pt-0 pt-28" id="main-content">
         <Outlet />
       </main>
     </div>

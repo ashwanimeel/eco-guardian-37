@@ -54,7 +54,7 @@ export default function ClimateHub() {
       <div className="grid md:grid-cols-3 gap-6 mb-12">
         {articles.map(a => (
           <Card key={a.article_id} className="overflow-hidden cursor-pointer" onClick={()=>setOpenArticle(a)} data-testid={`article-${a.article_id}`}>
-            <img src={a.image} alt="" className="w-full h-48 object-cover"/>
+            <img src={a.image} alt={`Illustration for article: ${a.title}`} className="w-full h-48 object-cover"/>
             <div className="p-5">
               <Badge variant="outline" className="text-[10px] tracking-widest uppercase">{a.category}</Badge>
               <h3 className="font-serif text-xl mt-3 mb-2">{a.title}</h3>
@@ -97,7 +97,7 @@ export default function ClimateHub() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           {openArticle && (
             <>
-              <img src={openArticle.image} alt="" className="w-full h-56 object-cover rounded"/>
+              <img src={openArticle.image} alt={`Illustration for ${openArticle.title}`} className="w-full h-56 object-cover rounded"/>
               <DialogHeader>
                 <Badge variant="outline" className="w-fit text-[10px] tracking-widest uppercase">{openArticle.category}</Badge>
                 <DialogTitle className="font-serif text-3xl">{openArticle.title}</DialogTitle>
